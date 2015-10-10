@@ -13,6 +13,11 @@ namespace Regexp
         }
 
         [Test]
+        public void Test_2(){
+            Assert.AreEqual ("ab|", ThompsonRegex.re2post ("(a|b)"));
+        }
+
+        [Test]
         public void patch_a_linked_list_of_a_single_element_replaces_that_element(){
             var ptr = new Ptrlist{ next=null, s =new State { value=1 } };
             ThompsonRegex.patch (ptr, new State{ value = 2 });
