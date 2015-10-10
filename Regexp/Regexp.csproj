@@ -32,14 +32,22 @@
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
     </Reference>
+    <Reference Include="FSharp.Core" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ThompsonRegex.cs" />
     <Compile Include="SomeTest.cs" />
+    <Compile Include="TogetherTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Regex\Regex.fsproj">
+      <Project>{90F7B50D-DF91-40E9-9BD7-8E69DE0D52AE}</Project>
+      <Name>Regex</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>

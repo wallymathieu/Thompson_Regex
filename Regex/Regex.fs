@@ -76,20 +76,7 @@ let state (g:RegexState) (c:NFAState,out:State option,out1:State option) : State
     let s = {lastList=Some(0);c=c;out=out;out1=out1}
     s
 
-(*
- * Since the out pointers in the list are always 
- * uninitialized, we use the pointers themselves
- * as storage for the Ptrlists.
- *)
-(* typedef union Ptrlist Ptrlist; *)
 type Ptrlist= State list 
-(*
-union Ptrlist
-{
-    Ptrlist *next;
-    State *s;
-};
-*)
 
 (*
  * A partially built NFA without the matching state filled in.
@@ -97,47 +84,29 @@ union Ptrlist
  * Frag.out is a list of places that need to be set to the
  * next state for this fragment.
  *)
+(*
+type Frag=
+    {
+        start:State;
+        out:Ptrlist
+    }
+*)
+type Frag(start:State, out:Ptrlist)=
+    member val start=start
+    member val out=out with get, set
 
-type Frag={
-    start:State
-    out: Ptrlist
-}
 (* Initialize Frag struct. *)
 let frag(start:State, out:Ptrlist)=
-    let n={ start=start; out=out }
+    let n=new Frag(start=start, out=out)
     n
 
 (* Create singleton list containing just outp. *)
 let list1 (outp:State) : Ptrlist= 
     [outp]
-
-(*
-Ptrlist*
-list1(State **outp)
-{
-    Ptrlist *l;
-    l = (Ptrlist* )outp;
-    l->next = NULL;
-    return l;
-}
-*)
 (* Patch the list of states at out to point to start. *)
-let patch (list : Ptrlist, s: State) : unit =
-    for l in list do
-        // <- 
-        ()
-    failwith "!"
-(*
-void
-patch(Ptrlist *l, State *s)
-{
-    Ptrlist *next;
-    for(; l!=NULL; l=next){
-        next = l->next;
-        l->s = s;
-    }
-}
-*)
+let patch (list : Ptrlist, s: State) : Ptrlist =
+    let l = list |> List.length
+    [ for i in 1 .. l -> s ]
 
 (* Join the two lists l1 and l2, returning the combination. *)
 let append(l1:Ptrlist, l2:Ptrlist) :Ptrlist=
@@ -159,7 +128,7 @@ let post2nfa (rs:RegexState) (postfix:string):State option=
         | '.' -> //catenate 
             let e2 = pop();
             let e1 = pop();
-            patch(e1.out, e2.start)
+            e1.out <- patch(e1.out, e2.start)
             push(frag(e1.start, e2.out));
         | '|' -> //alternate
             let e2 = pop();
@@ -173,12 +142,12 @@ let post2nfa (rs:RegexState) (postfix:string):State option=
         | '*' ->
             let e = pop()
             let s' = state rs (Split, Some(e.start), None)
-            patch(e.out, s')
+            e.out <- patch(e.out, s')
             push(frag(s', list1(s'.out1.Value)))
         | '+' -> //one or more
             let e = pop()
             let s' = state rs (Split, Some(e.start), None)
-            patch(e.out, s');
+            e.out <- patch(e.out, s');
             push(frag(e.start, list1(s'.out1.Value)))
         | c -> //default
             let s' = state rs (Char c, None, None)
@@ -189,18 +158,18 @@ let post2nfa (rs:RegexState) (postfix:string):State option=
     if (stack.Count>0) then
         None
     else
-        patch(e.out, rs.matchstate)
+        e.out <- patch(e.out, rs.matchstate)
         Some(e.start)
 
 type List=System.Collections.Generic.List<State>
-type ListState={
-    l1:List
-    l2:List
-    listid:int
-}with
+type ListState(l1:List,l2:List,listid:int)=
+    member val l1=l1
+    member val l2=l2
+    member val listid=listid with get, set
     member self.listid_plus_plus()=
-        {self with listid=self.listid+1}
-
+        self.listid <- self.listid+1
+    new ()=
+        new ListState(new List(), new List(), 0)
 
 (* Add s to l, following unlabeled arrows. *)
 let rec addstate (ls:ListState) (l:List,s:State option)=
@@ -220,9 +189,9 @@ let rec addstate (ls:ListState) (l:List,s:State option)=
 (* Compute initial state list *)
 let startlist (ls:ListState) (start:State,l:List)=
     l.Clear()
-    let nls=ls.listid_plus_plus()
+    ls.listid_plus_plus()
     addstate ls (l, Some(start))
-    (nls,l)
+    l
 
 
 (* Check whether state list contains a match. *)
@@ -234,44 +203,25 @@ let ismatch (rs:RegexState) (l:List)=
  * past the character c,
  * to create next NFA state set nlist.
  *)
-let step(clist:List, c:int,nlist:List)=
-    failwith "!"
-(*
-void
-step(List *clist, int c, List *nlist)
-{
-    int i;
-    State *s;
+let step (ls:ListState) (clist:List, c, nlist:List)=
+    ls.listid_plus_plus()
+    nlist.Clear()
+    for s in clist do
+        if s.c = c then
+            addstate ls (nlist, s.out)
 
-    listid++;
-    nlist->n = 0;
-    for(i=0; i<clist->n; i++){
-        s = clist->s[i];
-        if(s->c == c)
-            addstate(nlist, s->out);
-    }
-}
-*)
 (* Run NFA to determine whether it matches s. *)
-let match_ (start:State,s:string):bool=
-    failwith "!"
-(*
-int
-match(State *start, char *s)
-{
-    int i, c;
-    List *clist, *nlist, *t;
+let match_ rs ls (start:State,s:string):bool=
+    let mutable clist = startlist ls (start, ls.l1)
+    let mutable nlist = ls.l2
+    for s' in s.ToCharArray() do
+        let c = Char s' 
+        step ls (clist, c, nlist)
+        // swap clist, nlist :
+        let t = clist in clist <- nlist; nlist <- t
 
-    clist = startlist(start, &l1);
-    nlist = &l2;
-    for(; *s; s++){
-        c = *s & 0xFF;
-        step(clist, c, nlist);
-        t = clist; clist = nlist; nlist = t;    /* swap clist, nlist */
-    }
-    return ismatch(clist);
-}
-*)
+    //let rs = new RegexState()
+    ismatch rs clist
 
 (*
  * Permission is hereby granted, free of charge, to any person
