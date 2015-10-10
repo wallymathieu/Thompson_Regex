@@ -12,17 +12,6 @@
  * Can be distributed under the MIT license, see bottom of file.
  *)
 module Regex
-
-
-
-(*
- * Convert infix regexp re to postfix notation.
- * Insert . as explicit concatenation operator.
- * Cheesy parser, return static buffer.
- *)
-let re2post (re:string) : string=
-    // implemented in c#
-    failwith "!"
   
 (*
  * Represents an NFA state plus zero or one or two arrows exiting.
@@ -76,7 +65,7 @@ let state (g:RegexState) (c:NFAState,out:State option,out1:State option) : State
     let s = {lastList=Some(0);c=c;out=out;out1=out1}
     s
 
-type Ptrlist= State list 
+type Ptrlist= State option list 
 
 (*
  * A partially built NFA without the matching state filled in.
@@ -101,12 +90,12 @@ let frag(start:State, out:Ptrlist)=
     n
 
 (* Create singleton list containing just outp. *)
-let list1 (outp:State) : Ptrlist= 
+let list1 (outp:State option) : Ptrlist= 
     [outp]
 (* Patch the list of states at out to point to start. *)
 let patch (list : Ptrlist, s: State) : Ptrlist =
     let l = list |> List.length
-    [ for i in 1 .. l -> s ]
+    [ for i in 1 .. l ->Some s ]
 
 (* Join the two lists l1 and l2, returning the combination. *)
 let append(l1:Ptrlist, l2:Ptrlist) :Ptrlist=
@@ -138,20 +127,20 @@ let post2nfa (rs:RegexState) (postfix:string):State option=
         | '?' -> //zero or one 
             let e =pop()
             let s'=state rs (Split, Some(e.start), None)
-            push(frag(s', append(e.out, list1(s'.out1.Value))))
+            push(frag(s', append(e.out, list1(s'.out1))))
         | '*' ->
             let e = pop()
             let s' = state rs (Split, Some(e.start), None)
             e.out <- patch(e.out, s')
-            push(frag(s', list1(s'.out1.Value)))
+            push(frag(s', list1(s'.out1)))
         | '+' -> //one or more
             let e = pop()
             let s' = state rs (Split, Some(e.start), None)
             e.out <- patch(e.out, s');
-            push(frag(e.start, list1(s'.out1.Value)))
+            push(frag(e.start, list1(s'.out1)))
         | c -> //default
             let s' = state rs (Char c, None, None)
-            push(frag(s', list1(s'.out.Value)))
+            push(frag(s', list1(s'.out)))
         ()
 
     let e = pop()
@@ -220,7 +209,6 @@ let match_ rs ls (start:State,s:string):bool=
         // swap clist, nlist :
         let t = clist in clist <- nlist; nlist <- t
 
-    //let rs = new RegexState()
     ismatch rs clist
 
 (*

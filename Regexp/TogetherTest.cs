@@ -7,9 +7,9 @@ namespace Regexp
     public class TogetherTest
     {
         [Test]
-        public void Test(){
+        public void Trying_out_implementation(){
             //var post = "a";
-            var post = ThompsonRegex.re2post("a|b");
+            var post = ThompsonRegex.re2post("(a|b)");
             var rs = new Regex.RegexState ();
             var ls = new Regex.ListState ();
             var start = Regex.post2nfa(rs, post).Value;
