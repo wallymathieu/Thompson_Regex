@@ -93,7 +93,7 @@ type Frag=
 *)
 type Frag(start:State, out:Ptrlist)=
     member val start=start
-    member val out=out with get, set
+    member val out=out with get,set
 
 (* Initialize Frag struct. *)
 let frag(start:State, out:Ptrlist)=
@@ -126,33 +126,32 @@ let post2nfa (rs:RegexState) (postfix:string):State option=
     for p in postfix.ToCharArray() do
         match p with
         | '.' -> //catenate 
-            let e2 = pop();
-            let e1 = pop();
+            let e2 = pop()
+            let e1 = pop()
             e1.out <- patch(e1.out, e2.start)
-            push(frag(e1.start, e2.out));
+            push(frag(e1.start, e2.out))
         | '|' -> //alternate
-            let e2 = pop();
-            let e1 = pop();
-            let s' = state rs (Split, Some(e1.start), Some(e2.start))
-            push(frag(s', append(e1.out, e2.out)));
+            let e2 = pop()
+            let e1 = pop()
+            let s = state rs (Split, Some(e1.start), Some(e2.start))
+            push(frag(s, append(e1.out, e2.out)))
         | '?' -> //zero or one 
             let e =pop()
-            let s'=state rs (Split, Some(e.start), None)
-            push(frag(s', append(e.out, list1(s'.out1))))
+            let s = state rs (Split, Some(e.start), None)
+            push(frag(s, append(e.out, list1(s.out1))))
         | '*' ->
             let e = pop()
-            let s' = state rs (Split, Some(e.start), None)
-            e.out <- patch(e.out, s')
-            push(frag(s', list1(s'.out1)))
+            let s = state rs (Split, Some(e.start), None)
+            e.out <- patch(e.out, s)
+            push(frag(s, list1(s.out1)))
         | '+' -> //one or more
             let e = pop()
-            let s' = state rs (Split, Some(e.start), None)
-            e.out <- patch(e.out, s');
-            push(frag(e.start, list1(s'.out1)))
+            let s = state rs (Split, Some(e.start), None)
+            e.out <- patch(e.out, s)
+            push(frag(e.start, list1(s.out1)))
         | c -> //default
-            let s' = state rs (Char c, None, None)
-            push(frag(s', list1(s'.out)))
-        ()
+            let s = state rs (Char c, None, None)
+            push(frag(s, list1(s.out)))
 
     let e = pop()
     if (stack.Count>0) then
