@@ -367,6 +367,22 @@ void printSpaces(int num){
         printf(" ");
     }
 }
+char* tostring_c(int c){
+    switch (c){
+        case Match:
+            return "Match";
+        case Split:
+            return "Split";
+        default:{
+            char* retval=malloc(4*sizeof (char));
+            retval[0] = '\'';
+            retval[1] = c;
+            retval[2] = '\'';
+            retval[3] = 0;
+            return retval;
+        }
+    }
+}
 void printnfa(State *start, int depth)
 {
     if (depth > 100) {
@@ -374,7 +390,7 @@ void printnfa(State *start, int depth)
         return;
     }
     printSpaces(depth);
-    printf("(c=%i, lastlist=%i \n", start->c, start->lastlist);
+    printf("(c=%s, lastlist=%i \n", tostring_c(start->c), start->lastlist);
     if (start->out){
         printSpaces(depth+1);
         printf(",out=\n");

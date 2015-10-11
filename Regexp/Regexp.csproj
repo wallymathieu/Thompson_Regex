@@ -39,6 +39,7 @@
     <Compile Include="ThompsonRegex.cs" />
     <Compile Include="SomeTest.cs" />
     <Compile Include="TogetherTest.cs" />
+    <Compile Include="States.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

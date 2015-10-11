@@ -26,7 +26,7 @@ type NFAState=
     with
         override self.ToString()=
             match self with
-            | Char c-> sprintf "Char %c" c
+            | Char c-> sprintf "'%c'" c
             | Match -> "Match"
             | Split -> "Split"
 
