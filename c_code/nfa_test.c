@@ -361,6 +361,29 @@ match(State *start, char *s)
     }
     return ismatch(clist);
 }
+void printSpaces(int num){
+    for (int i = 0; i < num; ++i)
+    {
+        printf(" ");
+    }
+}
+void printnfa(State *start, int depth)
+{
+    printSpaces(depth);
+    printf("(c=%i, lastlist=%i \n",start->c, start->lastlist);
+    if (start->out){
+        printSpaces(depth+1);
+        printf(",out=\n");
+        printnfa(start->out, depth+2);
+    }
+    if (start->out1){
+        printSpaces(depth+1);
+        printf(",out1:\n");
+        printnfa(start->out1, depth+2);
+    }
+    printSpaces(depth);
+    printf(")\n");
+}
 
 int
 nfa_test()
@@ -386,6 +409,8 @@ nfa_test()
     if(start == NULL){
         fprintf(stderr, "error in post2nfa %s\n", post);
         return 1;
+    }else{
+        printnfa(start,0);
     }
     
     l1.s = malloc(nstate*sizeof l1.s[0]);
