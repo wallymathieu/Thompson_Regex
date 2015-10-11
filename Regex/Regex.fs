@@ -24,6 +24,12 @@ type NFAState=
     | Match //=256
     | Split //=257
     with
+        override self.ToString()=
+            match self with
+            | Char c-> sprintf "Char %c" c
+            | Match -> "Match"
+            | Split -> "Split"
+
         static member isSplit state=
             match state with
             | Split -> true
@@ -40,6 +46,7 @@ type NFAState=
             | Char c -> unicode.GetBytes([|c|]).[0] |> int
             | Match -> 256
             | Split -> 257
+           
 //[<Struct>]
 type State={
     c:NFAState

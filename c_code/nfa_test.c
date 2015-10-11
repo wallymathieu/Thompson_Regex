@@ -369,8 +369,12 @@ void printSpaces(int num){
 }
 void printnfa(State *start, int depth)
 {
+    if (depth > 100) {
+        fprintf(stderr, "!! printnfa depth\n");
+        return;
+    }
     printSpaces(depth);
-    printf("(c=%i, lastlist=%i \n",start->c, start->lastlist);
+    printf("(c=%i, lastlist=%i \n", start->c, start->lastlist);
     if (start->out){
         printSpaces(depth+1);
         printf(",out=\n");
@@ -403,6 +407,8 @@ nfa_test()
     if(post == NULL){
         fprintf(stderr, "bad regexp %s\n", argv[1]);
         return 1;
+    }else{
+        printf("post: %s\n", post);
     }
 
     start = post2nfa(post);
@@ -410,6 +416,7 @@ nfa_test()
         fprintf(stderr, "error in post2nfa %s\n", post);
         return 1;
     }else{
+        printf("NFA: \n");
         printnfa(start,0);
     }
     
