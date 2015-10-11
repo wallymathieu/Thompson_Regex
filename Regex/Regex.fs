@@ -13,12 +13,10 @@
  *)
 module Regex
   
-(*
- * Represents an NFA state plus zero or one or two arrows exiting.
- * if c == Match, no arrows out; matching state.
- * If c == Split, unlabeled arrows to out and out1 (if != NULL).
- * If c < 256, labeled arrow with character c to out.
- *)
+/// Represents an NFA state plus zero or one or two arrows exiting.
+/// if c == Match, no arrows out; matching state.
+/// If c == Split, unlabeled arrows to out and out1 (if != NULL).
+/// If c < 256, labeled arrow with character c to out.
 type NFAState=
     | Char of char
     | Match //=256
@@ -67,44 +65,32 @@ type RegexState(matchstate:State,nstate:int)=
     new () =
         new RegexState({c=Match;out=None;out1=None;lastList=0} (* matching state *), 0)
 
-(*State matchstate = { Match };   /* matching state */
-*)
-
-(* Allocate and initialize State *)
+/// Allocate and initialize State
 let state (g:RegexState) (c:NFAState,out:State option,out1:State option) : State=
     g.nstate_plus_plus()
-    let s = {lastList=0;c=c;out=out;out1=out1}
+    let s = { lastList=0; c=c; out=out; out1=out1 }
     s
 
 type RewriteState=
     | State_out1 of State
     | State_out of State
-(*
- * A partially built NFA without the matching state filled in.
- * Frag.start points at the start state.
- * Frag.out is a list of places that need to be set to the
- * next state for this fragment.
- *)
-(*
-type Frag=
-    {
-        start:State;
-        out:Ptrlist
-    }
-*)
+/// A partially built NFA without the matching state filled in.
+/// Frag.start points at the start state.
+/// Frag.out is a list of places that need to be set to the
+/// next state for this fragment.
 type Frag(start:State, out:RewriteState list)=
     member val start=start
-    member val out=out with get,set
+    member val out=out
 
-(* Initialize Frag struct. *)
+/// Initialize Frag struct. 
 let frag(start:State, out:RewriteState list)=
     let n=new Frag(start=start, out=out)
     n
 
-(* Create singleton list containing just outp. *)
+/// Create singleton list containing just outp. 
 let list1 (outp:RewriteState) : RewriteState list= 
     [outp]
-(* Patch the list of states at out to point to start. *)
+/// Patch the list of states at out to point to start.
 let patch (list : RewriteState list, s: State) =
     list |> List.iter (fun next->
         match next with
@@ -113,13 +99,11 @@ let patch (list : RewriteState list, s: State) =
     )
     ()
 
-(* Join the two lists l1 and l2, returning the combination. *)
+/// Join the two lists l1 and l2, returning the combination. 
 let append(l1,l2)= l1 @ l2
 
-(*
- * Convert postfix regular expression to NFA.
- * Return start state.
- *)
+/// Convert postfix regular expression to NFA.
+///  Return start state.
 let post2nfa (rs:RegexState) (postfix:string):State option=
     let mutable p:string=""
     let stack = new System.Collections.Generic.Stack<Frag>()
@@ -174,51 +158,52 @@ type ListState(l1:List,l2:List,listid:int)=
     new ()=
         new ListState(new List(), new List(), 0)
 
-(* Add s to l, following unlabeled arrows. *)
-let rec addstate (ls:ListState) (l:List,s':State option)=
+/// Add s to l, following unlabeled arrows.
+let rec addstate (ls:ListState) (l:List) (s:State)=
     // (s == NULL || s->lastlist == listid)
-    if Option.isNone s' || ls.listid = s'.Value.lastList  then 
+    if ls.listid = s.lastList  then 
         ()
     else
-        let s = s'.Value// TODO:Fix
         // s->lastlist = listid;
         s.lastList <- ls.listid
 
         if (NFAState.isSplit s.c) then
             // follow unlabeled arrows
-            addstate ls (l, s.out)
-            addstate ls (l, s.out1)
+            let addstate = Option.iter(addstate ls l) 
+            addstate s.out
+            addstate s.out1
             // return;
         else 
             // l->s[l->n++] = s;
             l.Add(s)
         ()
 
-(* Compute initial state list *)
+/// Compute initial state list
 let startlist (ls:ListState) (start:State,l:List)=
     l.Clear()
     ls.listid_plus_plus()
-    addstate ls (l, Some(start))
+    addstate ls l start
     l
 
 
-(* Check whether state list contains a match. *)
+/// Check whether state list contains a match.
 let ismatch (rs:RegexState) (l:List)=
     l.Contains( rs.matchstate ) 
 
-(*
- * Step the NFA from the states in clist
- * past the character c,
- * to create next NFA state set nlist.
- *)
+
+/// Step the NFA from the states in clist
+/// past the character c,
+/// to create next NFA state set nlist.
 let step (ls:ListState) (clist:List, c:char, nlist:List)=
     ls.listid_plus_plus()
     nlist.Clear()
     for s in clist do
         if s.c.matches c then
-            addstate ls (nlist, s.out)
+            let addstate = Option.iter(addstate ls nlist) 
+            addstate s.out
 
-(* Run NFA to determine whether it matches s. *)
+
+/// Run NFA to determine whether it matches s.
 let matches rs ls (start:State,s:string):bool=
     let mutable clist = startlist ls (start, ls.l1)
     let mutable nlist = ls.l2
