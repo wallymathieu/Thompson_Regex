@@ -24,6 +24,10 @@ type NFAState=
     | Match //=256
     | Split //=257
     with
+        member self.matches c=
+            match self with
+            |Char c'-> c'=c
+            |_ -> false
         override self.ToString()=
             match self with
             | Char c-> sprintf "'%c'" c
@@ -52,7 +56,7 @@ type State={
     c:NFAState
     out:State option
     out1:State option
-    mutable lastList:int option
+    mutable lastList:int
 }
 type RegexState(matchstate:State,nstate:int)=
     member val matchstate=matchstate
@@ -61,7 +65,7 @@ type RegexState(matchstate:State,nstate:int)=
         self.nstate <- self.nstate+1
         //new RegexState(matchstate, nstate+1)
     new () =
-        new RegexState({c=Match;out=None;out1=None;lastList=None} (* matching state *), 0)
+        new RegexState({c=Match;out=None;out1=None;lastList=0} (* matching state *), 0)
 
 (*State matchstate = { Match };   /* matching state */
 *)
@@ -69,7 +73,7 @@ type RegexState(matchstate:State,nstate:int)=
 (* Allocate and initialize State *)
 let state (g:RegexState) (c:NFAState,out:State option,out1:State option) : State=
     g.nstate_plus_plus()
-    let s = {lastList=Some(0);c=c;out=out;out1=out1}
+    let s = {lastList=0;c=c;out=out;out1=out1}
     s
 
 type Ptrlist= State option list 
@@ -168,18 +172,23 @@ type ListState(l1:List,l2:List,listid:int)=
         new ListState(new List(), new List(), 0)
 
 (* Add s to l, following unlabeled arrows. *)
-let rec addstate (ls:ListState) (l:List,s:State option)=
-    match s with
-    | Some state when not state.lastList.IsSome || state.lastList.Value<>ls.listid-> 
-        state.lastList <- Some(ls.listid)
-        if (NFAState.isSplit state.c) 
-        then
-            (* follow unlabeled arrows *)
-            addstate ls (l, state.out)
-            addstate ls (l, state.out1)
+let rec addstate (ls:ListState) (l:List,s':State option)=
+    // (s == NULL || s->lastlist == listid)
+    if Option.isNone s' || ls.listid = s'.Value.lastList  then 
+        ()
+    else
+        let s = s'.Value// TODO:Fix
+        // s->lastlist = listid;
+        s.lastList <- ls.listid
+
+        if (NFAState.isSplit s.c) then
+            // follow unlabeled arrows
+            addstate ls (l, s.out)
+            addstate ls (l, s.out1)
+            // return;
         else 
-            l.Add(state)
-    | _ ->
+            // l->s[l->n++] = s;
+            l.Add(s)
         ()
 
 (* Compute initial state list *)
@@ -199,22 +208,23 @@ let ismatch (rs:RegexState) (l:List)=
  * past the character c,
  * to create next NFA state set nlist.
  *)
-let step (ls:ListState) (clist:List, c, nlist:List)=
+let step (ls:ListState) (clist:List, c:char, nlist:List)=
     ls.listid_plus_plus()
     nlist.Clear()
     for s in clist do
-        if s.c = c then
+        if s.c.matches c then
             addstate ls (nlist, s.out)
 
 (* Run NFA to determine whether it matches s. *)
-let match_ rs ls (start:State,s:string):bool=
+let matches rs ls (start:State,s:string):bool=
     let mutable clist = startlist ls (start, ls.l1)
     let mutable nlist = ls.l2
-    for s' in s.ToCharArray() do
-        let c = Char s' 
+    for c in s.ToCharArray() do
         step ls (clist, c, nlist)
         // swap clist, nlist :
-        let t = clist in clist <- nlist; nlist <- t
+        let t = clist
+        clist <- nlist
+        nlist <- t
 
     ismatch rs clist
 

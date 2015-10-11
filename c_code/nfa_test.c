@@ -354,11 +354,20 @@ match(State *start, char *s)
 
     clist = startlist(start, &l1);
     nlist = &l2;
+    printf("----\n");
+    printf("%i\n", clist->n);
+    printf("%i\n", nlist->n);
+    printf("----\n");
     for(; *s; s++){
         c = *s & 0xFF;
+        printf("%i\n", c);
         step(clist, c, nlist);
         t = clist; clist = nlist; nlist = t;    /* swap clist, nlist */
     }
+    printf("----\n");
+    printf("%i\n", clist->n);
+    printf("%i\n", nlist->n);
+    printf("----\n");
     return ismatch(clist);
 }
 void printSpaces(int num){

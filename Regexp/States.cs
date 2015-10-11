@@ -1,34 +1,39 @@
 ﻿using System;
+using System.Text;
 
 namespace Regexp
 {
     public class States
     {
-        static void printSpaces(int num){
+        static string printSpaces(int num){
+            var sb = new StringBuilder();
             for (int i = 0; i < num; ++i)
             {
-                Console.Write(" ");
+                sb.Append(" ");
             }
+            return sb.ToString ();
         }
-        public static void printnfa(Regex.State start, int depth)
+        public static string printnfa(Regex.State start, int depth)
         {
+            var sb = new StringBuilder();
             if (depth > 100) {
                 throw new Exception ("!!");
             }
-            printSpaces(depth);
-            Console.Write(String.Format("(c={0}, lastlist={1} \n",start.c, start.lastList));
+            sb.Append(printSpaces(depth));
+            sb.Append(String.Format("(c={0}, lastlist={1} \n",start.c, start.lastList));
             if (start.@out!=null){
-                printSpaces(depth+1);
-                Console.Write(",out=\n");
-                printnfa(start.@out.Value, depth+2);
+                sb.Append(printSpaces(depth+1));
+                sb.Append(",out=\n");
+                sb.Append(printnfa(start.@out.Value, depth+2));
             }
             if (start.out1!=null){
-                printSpaces(depth+1);
-                Console.Write(",out1:\n");
-                printnfa(start.out1.Value, depth+2);
+                sb.Append(printSpaces(depth+1));
+                sb.Append(",out1:\n");
+                sb.Append(printnfa(start.out1.Value, depth+2));
             }
-            printSpaces(depth);
-            Console.Write(")\n");
+            sb.Append(printSpaces(depth));
+            sb.Append(")\n");
+            return sb.ToString ();
         }
     }
 }
