@@ -54,8 +54,8 @@ type NFAState=
 //[<Struct>]
 type State={
     c:NFAState
-    out:State option
-    out1:State option
+    mutable out:State option
+    mutable out1:State option
     mutable lastList:int
 }
 type RegexState(matchstate:State,nstate:int)=
@@ -76,8 +76,9 @@ let state (g:RegexState) (c:NFAState,out:State option,out1:State option) : State
     let s = {lastList=0;c=c;out=out;out1=out1}
     s
 
-type Ptrlist= State option list 
-
+type RewriteState=
+    | State_out1 of State
+    | State_out of State
 (*
  * A partially built NFA without the matching state filled in.
  * Frag.start points at the start state.
@@ -91,26 +92,29 @@ type Frag=
         out:Ptrlist
     }
 *)
-type Frag(start:State, out:Ptrlist)=
+type Frag(start:State, out:RewriteState list)=
     member val start=start
     member val out=out with get,set
 
 (* Initialize Frag struct. *)
-let frag(start:State, out:Ptrlist)=
+let frag(start:State, out:RewriteState list)=
     let n=new Frag(start=start, out=out)
     n
 
 (* Create singleton list containing just outp. *)
-let list1 (outp:State option) : Ptrlist= 
+let list1 (outp:RewriteState) : RewriteState list= 
     [outp]
 (* Patch the list of states at out to point to start. *)
-let patch (list : Ptrlist, s: State) : Ptrlist =
-    let l = list |> List.length
-    [ for i in 1 .. l ->Some s ]
+let patch (list : RewriteState list, s: State) =
+    list |> List.iter (fun next->
+        match next with
+        | State_out s'-> s'.out <- Some s
+        | State_out1 s'-> s'.out1 <- Some s
+    )
+    ()
 
 (* Join the two lists l1 and l2, returning the combination. *)
-let append(l1:Ptrlist, l2:Ptrlist) :Ptrlist=
-    l1 @ l2
+let append(l1,l2)= l1 @ l2
 
 (*
  * Convert postfix regular expression to NFA.
@@ -128,7 +132,7 @@ let post2nfa (rs:RegexState) (postfix:string):State option=
         | '.' -> //catenate 
             let e2 = pop()
             let e1 = pop()
-            e1.out <- patch(e1.out, e2.start)
+            patch(e1.out, e2.start)
             push(frag(e1.start, e2.out))
         | '|' -> //alternate
             let e2 = pop()
@@ -138,26 +142,26 @@ let post2nfa (rs:RegexState) (postfix:string):State option=
         | '?' -> //zero or one 
             let e =pop()
             let s = state rs (Split, Some(e.start), None)
-            push(frag(s, append(e.out, list1(s.out1))))
+            push(frag(s, append(e.out, list1(State_out1(s)))))
         | '*' ->
             let e = pop()
             let s = state rs (Split, Some(e.start), None)
-            e.out <- patch(e.out, s)
-            push(frag(s, list1(s.out1)))
+            patch(e.out, s)
+            push(frag(s, list1(State_out1(s))))
         | '+' -> //one or more
             let e = pop()
             let s = state rs (Split, Some(e.start), None)
-            e.out <- patch(e.out, s)
-            push(frag(e.start, list1(s.out1)))
+            patch(e.out, s)
+            push(frag(e.start, list1(State_out1(s))))
         | c -> //default
             let s = state rs (Char c, None, None)
-            push(frag(s, list1(s.out)))
+            push(frag(s, list1(State_out(s))))
 
     let e = pop()
     if (stack.Count>0) then
         None
     else
-        e.out <- patch(e.out, rs.matchstate)
+        patch(e.out, rs.matchstate)
         Some(e.start)
 
 type List=System.Collections.Generic.List<State>
