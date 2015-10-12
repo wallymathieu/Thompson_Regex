@@ -41,7 +41,7 @@ let startlist (ls:ListState) (start:State,l:List)=
 
 
 /// Check whether state list contains a match.
-let ismatch (rs:RegexState) (l:List)=
+let ismatch (l:List)=
     l.FindIndex( fun s-> NFAState.isMatch s.c ) >= 0 
 
 /// Step the NFA from the states in clist
@@ -57,7 +57,8 @@ let step (ls:ListState) (clist:List, c:char, nlist:List)=
 
 
 /// Run NFA to determine whether it matches s.
-let matches rs ls (start:State,s:string):bool=
+let matches (start:State,s:string):bool=
+    let ls = ListState()
     let mutable clist = startlist ls (start, ls.l1)
     let mutable nlist = ls.l2
     for c in s.ToCharArray() do
@@ -67,4 +68,4 @@ let matches rs ls (start:State,s:string):bool=
         clist <- nlist
         nlist <- t
 
-    ismatch rs clist
+    ismatch clist

@@ -42,13 +42,9 @@ type PreState={
     mutable out1:PreState option
 }
 
-type RegexState(matchstate:PreState)=
-    member val matchstate=matchstate
-    new () =
-        new RegexState({c=Match;out=None;out1=None } (* matching state *))
 
 /// Allocate and initialize State
-let state (g:RegexState) (c:NFAState,out:PreState option,out1:PreState option) : PreState=
+let state (c:NFAState,out:PreState option,out1:PreState option) : PreState=
     let s = { c=c; out=out; out1=out1 }
     s
 
@@ -89,7 +85,7 @@ let rec fix (s:PreState):State=
 
 /// Convert postfix regular expression to NFA.
 ///  Return start state.
-let post2nfa (rs:RegexState) (postfix:string):State option=
+let post2nfa (postfix:string):State option=
     let mutable p:string=""
     let stack = new System.Collections.Generic.Stack<Frag>()
     let pop()=
@@ -106,29 +102,30 @@ let post2nfa (rs:RegexState) (postfix:string):State option=
         | '|' -> //alternate
             let e2 = pop()
             let e1 = pop()
-            let s = state rs (Split, Some(e1.start), Some(e2.start))
+            let s = state (Split, Some(e1.start), Some(e2.start))
             push(frag(s, append(e1.out, e2.out)))
         | '?' -> //zero or one 
             let e =pop()
-            let s = state rs (Split, Some(e.start), None)
+            let s = state (Split, Some(e.start), None)
             push(frag(s, append(e.out, list1(State_out1(s)))))
         | '*' ->
             let e = pop()
-            let s = state rs (Split, Some(e.start), None)
+            let s = state (Split, Some(e.start), None)
             patch(e.out, s)
             push(frag(s, list1(State_out1(s))))
         | '+' -> //one or more
             let e = pop()
-            let s = state rs (Split, Some(e.start), None)
+            let s = state (Split, Some(e.start), None)
             patch(e.out, s)
             push(frag(e.start, list1(State_out1(s))))
         | c -> //default
-            let s = state rs (Char c, None, None)
+            let s = state (Char c, None, None)
             push(frag(s, list1(State_out(s))))
 
     let e = pop()
     if (stack.Count>0) then
         None
     else
-        patch(e.out, rs.matchstate)
+        let matchstate = {c=Match;out=None;out1=None }
+        patch(e.out, matchstate)
         Some(fix e.start)

@@ -8,13 +8,11 @@ namespace Regexp
     {
         private bool IsMatch(string regex, string value){
             var post = ThompsonRegex.re2post(regex);
-            var rs = new NFA.RegexState ();
-            var ls = new Regex.ListState ();
-            var start = NFA.post2nfa(rs, post);
+            var start = NFA.post2nfa(post);
             if (start == null) {
                 throw new Exception ("Failed post2nfa");
             }
-            return (Regex.matches (rs,ls,start.Value, value));
+            return (Regex.matches (start.Value, value));
         }
         private bool HasMatch(NFA.State state){
             if (state.c.IsMatch) {
@@ -25,8 +23,7 @@ namespace Regexp
         }
         private void Should_have_match_state(string regex){
             var post = ThompsonRegex.re2post(regex);
-            var rs = new NFA.RegexState ();
-            var start = NFA.post2nfa(rs, post);
+            var start = NFA.post2nfa(post);
             if (start == null) {
                 throw new Exception ("Failed post2nfa");
             }
