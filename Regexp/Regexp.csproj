@@ -46,9 +46,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Regex\Regex.fsproj">
+    <ProjectReference Include="..\Regex\ThompsonRegex.fsproj">
       <Project>{90F7B50D-DF91-40E9-9BD7-8E69DE0D52AE}</Project>
-      <Name>Regex</Name>
+      <Name>ThompsonRegex</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

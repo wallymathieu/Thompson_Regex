@@ -87,67 +87,7 @@ namespace Regexp
             //*dst = 0;
             return buf.ToString();
         }
-
-       
-
-        public static void patch(Ptrlist l, State s)
-        {
-            Ptrlist next;
-            for(; l!=null; l=next){
-                next = l.next;
-                l.s = s;
-            }
-        }
     }
-    public class Ptrlist:IEquatable<Ptrlist>{
-        public Ptrlist next;
-        public State s;
-        public override bool Equals (object obj)
-        {
-            return Equals (obj as Ptrlist);
-        }
-
-        public bool Equals (Ptrlist other)
-        {
-            if (ReferenceEquals (null, other)) {
-                return false;
-            }
-
-            return Equals( this.next,other.next) 
-                && Equals(this.s, other.s);
-        }
-        public override int GetHashCode ()
-        {
-            return (this.next!=null? this.next.GetHashCode ():-1) 
-                ^ (this.s!=null? this.s.GetHashCode(): 0);
-        }
-        public override string ToString ()
-        {
-            return string.Format ("[{0}, {1}]", s, next);
-        }
-    }
-
-    public class State:IEquatable<State>{
-        public int value;
-        public bool Equals (State other)
-        {
-            if (ReferenceEquals (null, other)) {
-                return false;
-            }
-            return value.Equals (other.value);
-        }
-        public override bool Equals (object obj)
-        {
-            return Equals (obj as State);
-        }
-        public override int GetHashCode ()
-        {
-            return value.GetHashCode ();
-        }
-        public override string ToString ()
-        {
-            return value.ToString();
-        }
-    }
+  
 }
 

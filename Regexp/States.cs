@@ -13,7 +13,7 @@ namespace Regexp
             }
             return sb.ToString ();
         }
-        public static string printnfa(Regex.State start, int depth)
+        public static string printnfa(NFA.State start, int depth)
         {
             var sb = new StringBuilder();
             if (depth > 100) {

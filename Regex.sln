@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{f2a71f9b-5d33-465a-a702-920d77279786}") = "Regex", "Regex\Regex.fsproj", "{90F7B50D-DF91-40E9-9BD7-8E69DE0D52AE}"
+Project("{f2a71f9b-5d33-465a-a702-920d77279786}") = "ThompsonRegex", "Regex\ThompsonRegex.fsproj", "{90F7B50D-DF91-40E9-9BD7-8E69DE0D52AE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Regexp", "Regexp\Regexp.csproj", "{8AABB851-5E49-4662-84A3-F96F01C86262}"
 EndProject

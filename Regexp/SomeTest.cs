@@ -16,30 +16,6 @@ namespace Regexp
         public void Test_2(){
             Assert.AreEqual ("ab|", ThompsonRegex.re2post ("(a|b)"));
         }
-
-        [Test]
-        public void patch_a_linked_list_of_a_single_element_replaces_that_element(){
-            var ptr = new Ptrlist{ next=null, s =new State { value=1 } };
-            ThompsonRegex.patch (ptr, new State{ value = 2 });
-            Assert.AreEqual (new Ptrlist{ next = null, s = new State { value = 2 } }, ptr);
-        }
-
-        [Test]
-        public void patch_a_linked_list_of_many_elements_results_in_all_elements_being_replaced(){
-            var ptr = new Ptrlist{ next=new Ptrlist{
-                    next=null,
-                    s=new State{ value=2 }
-                }, 
-                s =new State { value=1 } 
-            };
-            ThompsonRegex.patch (ptr, new State{ value = 3 });
-            Assert.AreEqual (new Ptrlist{ next=new Ptrlist{
-                    next=null,
-                    s=new State{ value=3 }
-                }, 
-                s =new State { value=3 } 
-            }, ptr);
-        }
     }
 }
 
