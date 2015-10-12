@@ -28,43 +28,48 @@ type NFAState=
             | Match -> true
             | _ -> false
 
-
-//[<Struct>]
 type State={
     c:NFAState
-    mutable out:State option
-    mutable out1:State option
-    /// it would be nice if this was 
+    out:State option
+    out1:State option
+    /// it would be nice if this was a flyweight via dictionary
     mutable lastList:int
 }
-type RegexState(matchstate:State,nstate:int)=
+//[<Struct>]
+type PreState={
+    c:NFAState
+    mutable out:PreState option
+    mutable out1:PreState option
+}
+
+type RegexState(matchstate:PreState,nstate:int)=
     member val matchstate=matchstate
     member val nstate=nstate with get,set
     member self.nstate_plus_plus()=
         self.nstate <- self.nstate+1
         //new RegexState(matchstate, nstate+1)
     new () =
-        new RegexState({c=Match;out=None;out1=None;lastList=0} (* matching state *), 0)
+        new RegexState({c=Match;out=None;out1=None } (* matching state *), 0)
 
 /// Allocate and initialize State
-let state (g:RegexState) (c:NFAState,out:State option,out1:State option) : State=
+let state (g:RegexState) (c:NFAState,out:PreState option,out1:PreState option) : PreState=
     g.nstate_plus_plus()
-    let s = { lastList=0; c=c; out=out; out1=out1 }
+    let s = { c=c; out=out; out1=out1 }
     s
 
 type RewriteState=
-    | State_out1 of State
-    | State_out of State
+    | State_out1 of PreState
+    | State_out of PreState
 /// A partially built NFA without the matching state filled in.
 /// Frag.start points at the start state.
 /// Frag.out is a list of places that need to be set to the
 /// next state for this fragment.
-type Frag(start:State, out:RewriteState list)=
+type Frag(start:PreState, out:RewriteState list)=
     member val start=start
     member val out=out
 
 /// Initialize Frag struct. 
-let frag(start:State, out:RewriteState list)=
+let frag(start:PreState, out:RewriteState list)=
     let n=new Frag(start=start, out=out)
     n
 
@@ -72,7 +77,7 @@ let frag(start:State, out:RewriteState list)=
 let list1 (outp:RewriteState) : RewriteState list= 
     [outp]
 /// Patch the list of states at out to point to start.
-let patch (list : RewriteState list, s: State) =
+let patch (list : RewriteState list, s: PreState) =
     list |> List.iter (fun next->
         match next with
         | State_out s'-> s'.out <- Some s
@@ -82,6 +87,10 @@ let patch (list : RewriteState list, s: State) =
 
 /// Join the two lists l1 and l2, returning the combination. 
 let append(l1,l2)= l1 @ l2
+
+let rec fix (s:PreState):State=
+    let fix_opt = Option.map fix 
+    { c=s.c; out= fix_opt s.out; out1= fix_opt s.out1; lastList=0 }
 
 /// Convert postfix regular expression to NFA.
 ///  Return start state.
@@ -127,4 +136,4 @@ let post2nfa (rs:RegexState) (postfix:string):State option=
         None
     else
         patch(e.out, rs.matchstate)
-        Some(e.start)
+        Some(fix e.start)

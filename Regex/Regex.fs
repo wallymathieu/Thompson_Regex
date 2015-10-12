@@ -42,8 +42,7 @@ let startlist (ls:ListState) (start:State,l:List)=
 
 /// Check whether state list contains a match.
 let ismatch (rs:RegexState) (l:List)=
-    l.Contains( rs.matchstate ) 
-
+    l.FindIndex( fun s-> NFAState.isMatch s.c ) >= 0 
 
 /// Step the NFA from the states in clist
 /// past the character c,
