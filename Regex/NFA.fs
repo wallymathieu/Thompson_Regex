@@ -42,18 +42,13 @@ type PreState={
     mutable out1:PreState option
 }
 
-type RegexState(matchstate:PreState,nstate:int)=
+type RegexState(matchstate:PreState)=
     member val matchstate=matchstate
-    member val nstate=nstate with get,set
-    member self.nstate_plus_plus()=
-        self.nstate <- self.nstate+1
-        //new RegexState(matchstate, nstate+1)
     new () =
-        new RegexState({c=Match;out=None;out1=None } (* matching state *), 0)
+        new RegexState({c=Match;out=None;out1=None } (* matching state *))
 
 /// Allocate and initialize State
 let state (g:RegexState) (c:NFAState,out:PreState option,out1:PreState option) : PreState=
-    g.nstate_plus_plus()
     let s = { c=c; out=out; out1=out1 }
     s
 
