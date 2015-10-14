@@ -20,7 +20,7 @@ namespace Regexp
         private void Should_have_match_state(string regex){
             
             var post = RegexToPostfix.re2post(regex);
-            var start = NFA.post2nfa(post.Value);
+            var start = NFA.post2nfa(post);
             if (start == null) {
                 throw new Exception ("Failed post2nfa");
             }

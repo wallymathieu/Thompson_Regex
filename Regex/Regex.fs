@@ -72,6 +72,6 @@ let matches (start:State,s:string):bool=
     ismatch clist
 let isMatch (regex, value)=
     re2post(regex)
-        |> Option.bind NFA.post2nfa
+        |> NFA.post2nfa
         |> Option.map (fun start-> matches (start, value))
     

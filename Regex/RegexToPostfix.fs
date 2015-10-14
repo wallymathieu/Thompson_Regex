@@ -3,81 +3,60 @@
 open System
 open System.Text
 open System.Collections.Generic
-[<Struct>]
-type re2post_s=
-    struct
-        val mutable nalt:int
-        val mutable natom:int
-    end
+type re2post_s={
+    nalt:int
+    natom:int
+}
 
-
-let re2post(re:string)=
-    let mutable nalt =0
-    let mutable natom =0
-    let buf=new StringBuilder();
-    let paren = new List<re2post_s>(100)//, *p;
-
-    let mutable p = 0
-    let mutable nalt = 0
-    let mutable natom = 0
-    for c in re.ToCharArray () do
+let rec re2post'
+    (paren: re2post_s list) 
+    (s: re2post_s)
+    = function
+    | [] -> 
+        if paren.Length <> 0 then
+            failwith "unmatched!"
+        else
+            (List.replicate (s.natom-1) '.' ) @ (List.replicate s.nalt '|')
+    | c:: t ->
         match c with
         | '('->
-            if(natom > 1) then
-                natom <- natom-1
-                buf.Append('.')|> ignore
+            if(s.natom > 1) then
+                '.' :: (re2post' paren {s with natom=s.natom-1} t)
             else
-                if paren.Count<=p then
-                    paren.Add(new re2post_s())
-                else
-                    ()
-                let mutable p' =paren.[p]
-                p'.nalt <- nalt
-                p'.natom <- natom
-                paren.[p] <- p'
-                p<-p+1;
-                nalt <- 0;
-                natom <- 0;
+                (re2post' (s:: paren) {natom=0; nalt=0} t)
         | '|'->
-            if(natom = 0) then
-                failwith "!";
+            if(s.natom = 0) then
+                failwith "unmatched!";
             else
-                buf.Append( List.replicate (natom-1) '.' |> List.toArray ) |> ignore
-                natom<-0
-                nalt<-nalt+1;
+                let dots = List.replicate (s.natom-1) '.' 
+                dots @ (re2post' paren {nalt=s.nalt+1; natom=0} t)
         | ')'->
-            if(p = 0 || natom = 0) then
-                failwith "!";
+            if(s.natom = 0) then
+                failwith "unmatched!";
             else
-                buf.Append( List.replicate (natom-1) '.'  |> List.toArray) |> ignore
-                natom<-0
-                buf.Append( List.replicate nalt '|'  |> List.toArray) |> ignore
-                p<-p-1
-                nalt <- paren.[p].nalt
-                natom <- paren.[p].natom
-                natom<-natom+1;
+                let ops = (List.replicate (s.natom-1) '.') @ (List.replicate s.nalt '|' )
+                match paren with
+                | p::paren_rest ->
+                    ops @ (re2post' paren_rest {nalt=p.nalt; natom=p.natom+1} t)
+                | _ -> failwith "unmatched!"
         | '*'
         | '+'
         | '?'->
-            if(natom = 0) then
-                failwith "!"
+            if(s.natom = 0) then
+                failwith "unmatched!"
             else
-                buf.Append(c)|> ignore
+                c::(re2post' paren s t)
         | c' ->
-            if(natom > 1) then
-                natom<-natom-1
-                buf.Append( '.') |> ignore
-            else
-                ()
-            buf.Append( c') |> ignore
+            let mutable natom = s.natom
+            let op' =
+                if(natom > 1) then
+                    natom<-natom-1
+                    ['.']
+                else
+                    []
             natom<-natom+1
-        
-    
-    if p <> 0 then
-        None
-    else
-        buf.Append( List.replicate (natom-1) '.'  |> List.toArray) |> ignore
-        buf.Append( List.replicate nalt '|' |> List.toArray) |> ignore
+            op' @ [c'] @ (re2post' paren {s with natom=natom} t)
 
-    //*dst = 0;
-        Some(buf.ToString())
+let re2post(re:string)=
+    let result = re2post' [] {natom=0;nalt=0} ( re.ToCharArray() |> Array.toList )
+    new String(result |> List.toArray)
