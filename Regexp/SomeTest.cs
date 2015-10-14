@@ -8,13 +8,13 @@ namespace Regexp
     {
         [Test]
         public void Test(){
-            Assert.AreEqual ("abc||", ThompsonRegex.re2post ("a|b|c"));
-            Assert.AreEqual ("ab.c|", ThompsonRegex.re2post ("ab|c"));
+            Assert.AreEqual ("abc||", RegexToPostfix.re2post ("a|b|c").Value);
+            Assert.AreEqual ("ab.c|", RegexToPostfix.re2post ("ab|c").Value);
         }
 
         [Test]
         public void Test_2(){
-            Assert.AreEqual ("ab|", ThompsonRegex.re2post ("(a|b)"));
+            Assert.AreEqual ("ab|", RegexToPostfix.re2post ("(a|b)").Value);
         }
     }
 }

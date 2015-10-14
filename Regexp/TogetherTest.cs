@@ -7,12 +7,8 @@ namespace Regexp
     public class TogetherTest
     {
         private bool IsMatch(string regex, string value){
-            var post = ThompsonRegex.re2post(regex);
-            var start = NFA.post2nfa(post);
-            if (start == null) {
-                throw new Exception ("Failed post2nfa");
-            }
-            return (Regex.matches (start.Value, value));
+            var m = Regex.isMatch(regex, value);
+            return m!=null ? m.Value : false;
         }
         private bool HasMatch(NFA.State state){
             if (state.c.IsMatch) {
@@ -22,8 +18,9 @@ namespace Regexp
             || (state.@out1 != null && HasMatch (state.@out1.Value));
         }
         private void Should_have_match_state(string regex){
-            var post = ThompsonRegex.re2post(regex);
-            var start = NFA.post2nfa(post);
+            
+            var post = RegexToPostfix.re2post(regex);
+            var start = NFA.post2nfa(post.Value);
             if (start == null) {
                 throw new Exception ("Failed post2nfa");
             }

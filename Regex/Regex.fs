@@ -1,6 +1,7 @@
 ﻿module Regex
   
 open NFA
+open RegexToPostfix
 
 type List=System.Collections.Generic.List<State>
 type ListState(l1:List,l2:List,listid:int)=
@@ -69,3 +70,8 @@ let matches (start:State,s:string):bool=
         nlist <- t
 
     ismatch clist
+let isMatch (regex, value)=
+    re2post(regex)
+        |> Option.bind NFA.post2nfa
+        |> Option.map (fun start-> matches (start, value))
+    
