@@ -27,7 +27,7 @@ type ListState(listid:int) =
         ls.lastList.[v] <- ls.listid
 
 /// Run NFA to determine whether it matches s.
-let matches (start:State<'t>,s:'t seq):bool=
+let matches (start:State<'t>) (s:'t seq) :bool=
     /// Check whether state list contains a match.
     let ismatch (l:MList<'t>)=
         l.FindIndex( fun s-> NFAState<'t>.isMatch s.c ) >= 0 
@@ -100,5 +100,5 @@ let isMatch (regex, value)=
     re2post(regex)
         |> post2format
         |> NFA.post2nfa
-        |> Option.map (fun start-> matches (start, value))
+        |> Option.map (fun start-> matches start value)
     
