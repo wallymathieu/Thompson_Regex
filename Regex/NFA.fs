@@ -4,18 +4,18 @@
 /// if c == Match, no arrows out; matching state.
 /// If c == Split, unlabeled arrows to out and out1 (if != NULL).
 /// If c < 256, labeled arrow with character c to out.
-type NFAState=
-    | Char of char
+type NFAState<'t> when 't :equality=
+    | Value of 't
     | Match //=256
     | Split //=257
     with
         member self.matches c=
             match self with
-            |Char c'-> c'=c
+            |Value c'-> c'=c
             |_ -> false
         override self.ToString()=
             match self with
-            | Char c-> sprintf "'%c'" c
+            | Value c-> sprintf "'%O'" c
             | Match -> "Match"
             | Split -> "Split"
 
@@ -28,104 +28,131 @@ type NFAState=
             | Match -> true
             | _ -> false
 
-type State={
-    c:NFAState
-    out:State option
-    out1:State option
-    /// it would be nice if this was a flyweight via dictionary
-    mutable lastList:int
-}
-//[<Struct>]
-type PreState={
-    c:NFAState
-    mutable out:PreState option
-    mutable out1:PreState option
+type State<'t> when 't :equality ={
+    c:NFAState<'t>
+    out:State<'t> option
+    out1:State<'t> option
+    id:int
 }
 
+/// the algorithm only need for the state to be mutable
+/// while it's constructing the nfa
+type internal PreState<'t> when 't :equality={
+    c:NFAState<'t>
+    id: int
+    mutable out:PreState<'t> option
+    mutable out1:PreState<'t> option
+}
 
-/// Allocate and initialize State
-let state (c:NFAState,out:PreState option,out1:PreState option) : PreState=
-    let s = { c=c; out=out; out1=out1 }
-    s
+type internal RewriteState<'t> when 't : equality=
+    | State_out1 of PreState<'t>
+    | State_out of PreState<'t>
 
-type RewriteState=
-    | State_out1 of PreState
-    | State_out of PreState
 /// A partially built NFA without the matching state filled in.
 /// Frag.start points at the start state.
 /// Frag.out is a list of places that need to be set to the
 /// next state for this fragment.
-type Frag(start:PreState, out:RewriteState list)=
+type internal Frag<'t when 't : equality>(start:PreState<'t>, out:RewriteState<'t> list)=
     member val start=start
     member val out=out
 
-/// Initialize Frag struct. 
-let frag(start:PreState, out:RewriteState list)=
-    let n=new Frag(start=start, out=out)
-    n
+type OperationType=
+    | Catenate
+    | Alternate
+    | ZeroOrOne
+    | Many
+    | OneOrMore
+    with
+        static member fromChar c=
+            match c with
+            | '.' -> Some Catenate
+            | '|' -> Some Alternate
+            | '?' -> Some ZeroOrOne
+            | '*' -> Some Many
+            | '+' -> Some OneOrMore
+            | _ -> None
 
-/// Create singleton list containing just outp. 
-let list1 (outp:RewriteState) : RewriteState list= 
-    [outp]
-/// Patch the list of states at out to point to start.
-let patch (list : RewriteState list, s: PreState) =
-    list |> List.iter (fun next->
-        match next with
-        | State_out s'-> s'.out <- Some s
-        | State_out1 s'-> s'.out1 <- Some s
-    )
-    ()
-
-/// Join the two lists l1 and l2, returning the combination. 
-let append(l1,l2)= l1 @ l2
-
-let rec fix (s:PreState):State=
-    let fix_opt = Option.map fix 
-    { c=s.c; out= fix_opt s.out; out1= fix_opt s.out1; lastList=0 }
+type Match<'t>=
+    | Operation of OperationType
+    | Value of 't
 
 /// Convert postfix regular expression to NFA.
 ///  Return start state.
-let post2nfa (postfix:string):State option=
+let post2nfa (postfix:Match<'t> list):State<'t> option when 't : equality=
+
+    /// get ids for states
+    let IdGenerator()=
+        let id= ref 1
+        ( fun unit->
+            id := !id+1
+            id
+        )
+
+    /// Allocate and initialize State
+    let state c id out out1 : PreState<_>=
+        { c=c; id=id; out=out; out1=out1 }
+
+    /// Patch the list of states at out to point to start.
+    let patch (list, s) =
+        list |> List.iter (fun next->
+            match next with
+            | State_out s'-> s'.out <- Some s
+            | State_out1 s'-> s'.out1 <- Some s
+        )
+
+    /// Initialize Frag struct. 
+    let frag(start, out)=
+        new Frag<_>(start=start, out=out)
+
     let mutable p:string=""
-    let stack = new System.Collections.Generic.Stack<Frag>()
+    let idgen = IdGenerator()
+    let stack = new System.Collections.Generic.Stack<Frag<'t>>()
     let pop()=
         stack.Pop()
     let push v=
         stack.Push v
-    for p in postfix.ToCharArray() do
+    for p in postfix do
         match p with
-        | '.' -> //catenate 
+        | Operation Catenate -> //catenate 
             let e2 = pop()
             let e1 = pop()
             patch(e1.out, e2.start)
             push(frag(e1.start, e2.out))
-        | '|' -> //alternate
+        | Operation Alternate -> //alternate
             let e2 = pop()
             let e1 = pop()
-            let s = state (Split, Some(e1.start), Some(e2.start))
-            push(frag(s, append(e1.out, e2.out)))
-        | '?' -> //zero or one 
+            let s = state Split (!idgen()) (Some(e1.start)) (Some(e2.start))
+            push(frag(s, e1.out @ e2.out))
+        | Operation ZeroOrOne -> //zero or one 
             let e =pop()
-            let s = state (Split, Some(e.start), None)
-            push(frag(s, append(e.out, list1(State_out1(s)))))
-        | '*' ->
+            let s = state Split (!idgen()) (Some(e.start)) None
+            push(frag(s, e.out @ [State_out1(s)]))
+        | Operation Many ->
             let e = pop()
-            let s = state (Split, Some(e.start), None)
+            let s = state Split (!idgen()) (Some(e.start)) None
             patch(e.out, s)
-            push(frag(s, list1(State_out1(s))))
-        | '+' -> //one or more
+            push(frag(s, [State_out1(s)]))
+        | Operation OneOrMore -> //one or more
             let e = pop()
-            let s = state (Split, Some(e.start), None)
+            let s = state Split (!idgen()) (Some(e.start)) None
             patch(e.out, s)
-            push(frag(e.start, list1(State_out1(s))))
-        | c -> //default
-            let s = state (Char c, None, None)
-            push(frag(s, list1(State_out(s))))
+            push( frag(e.start, [State_out1(s)]) )
+        | Value c -> //default
+            let s = state (NFAState.Value c) (!idgen()) None None
+            push( frag(s, [State_out(s)]) )
 
     let e = pop()
     if (stack.Count>0) then
         None
     else
-        let matchstate = {c=Match;out=None;out1=None }
+        let matchstate = {c=Match;out=None;out1=None;id=0}
         patch(e.out, matchstate)
-        Some(fix e.start)
+
+        let rec mapToState (s: PreState<'t>) : State<'t>=
+            let optMapToState = Option.map mapToState 
+            { c= s.c
+              id= s.id
+              out= optMapToState s.out
+              out1= optMapToState s.out1 }
+
+        Some(mapToState e.start)
