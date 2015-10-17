@@ -1,6 +1,7 @@
-# Thompson_Regex
+# Thompson_Regex [![Build Status](https://travis-ci.org/wallymathieu/Thompson_Regex.svg)](https://travis-ci.org/wallymathieu/Thompson_Regex) [![Build status](https://ci.appveyor.com/api/projects/status/xny5sdoebkrbmmr5/branch/master?svg=true)](https://ci.appveyor.com/project/wallymathieu/thompson-regex/branch/master)
+
 porting https://swtch.com/~rsc/regexp/regexp1.html to f#
 
-## Private:
+## Why
 
-Just a sketch so far
+In order to have a regex matcher in f#. This algorithm can be reused for other usages.
