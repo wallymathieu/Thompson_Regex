@@ -1,0 +1,4 @@
+NUGET
+  remote: https://ci.appveyor.com/nuget/markdownlog-wallymathieu
+  specs:
+    NUnit (2.6.4) - framework: >= net40
