@@ -1,4 +1,6 @@
 NUGET
-  remote: https://ci.appveyor.com/nuget/markdownlog-wallymathieu
+  remote: https://nuget.org/api/v2
   specs:
+    FAKE (4.7.1)
     NUnit (2.6.4) - framework: >= net40
+    NUnit.Runners (2.6.4)

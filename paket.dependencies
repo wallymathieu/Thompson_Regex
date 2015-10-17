@@ -1,6 +1,7 @@
-source https://ci.appveyor.com/nuget/markdownlog-wallymathieu
-source https://ci.appveyor.com/nuget/markdownlog-ejgr2mqjbecf
 source https://nuget.org/api/v2/
 source https://www.nuget.org/api/v2/
 
 nuget NUnit 2.6.4 framework: >= net40
+nuget NUnit.Runners
+nuget FAKE
+
