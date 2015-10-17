@@ -60,7 +60,7 @@ type OperationType=
     | Catenate
     | Alternate
     | ZeroOrOne
-    | Many
+    | ZeroOrMore
     | OneOrMore
     with
         static member fromChar c=
@@ -68,7 +68,7 @@ type OperationType=
             | '.' -> Some Catenate
             | '|' -> Some Alternate
             | '?' -> Some ZeroOrOne
-            | '*' -> Some Many
+            | '*' -> Some ZeroOrMore
             | '+' -> Some OneOrMore
             | _ -> None
 
@@ -127,7 +127,7 @@ let post2nfa (postfix:Match<'t> list):State<'t> option when 't : equality=
             let e =pop()
             let s = state Split (!idgen()) (Some(e.start)) None
             push(frag(s, e.out @ [State_out1(s)]))
-        | Operation Many ->
+        | Operation ZeroOrMore ->
             let e = pop()
             let s = state Split (!idgen()) (Some(e.start)) None
             patch(e.out, s)
