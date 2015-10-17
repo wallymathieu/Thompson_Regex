@@ -30,29 +30,20 @@ type NFAState<'t> when 't :equality=
 
 type State<'t> when 't :equality ={
     c:NFAState<'t>
-    out:State<'t> option
-    out1:State<'t> option
+    mutable out:State<'t> option
+    mutable out1:State<'t> option
     id:int
 }
 
-/// the algorithm only need for the state to be mutable
-/// while it's constructing the nfa
-type internal PreState<'t> when 't :equality={
-    c:NFAState<'t>
-    id: int
-    mutable out:PreState<'t> option
-    mutable out1:PreState<'t> option
-}
-
 type internal RewriteState<'t> when 't : equality=
-    | State_out1 of PreState<'t>
-    | State_out of PreState<'t>
+    | State_out1 of State<'t>
+    | State_out of State<'t>
 
 /// A partially built NFA without the matching state filled in.
 /// Frag.start points at the start state.
 /// Frag.out is a list of places that need to be set to the
 /// next state for this fragment.
-type internal Frag<'t when 't : equality>(start:PreState<'t>, out:RewriteState<'t> list)=
+type internal Frag<'t when 't : equality>(start:State<'t>, out:RewriteState<'t> list)=
     member val start=start
     member val out=out
 
@@ -89,7 +80,7 @@ let post2nfa (postfix:Match<'t> list):State<'t> option when 't : equality=
         )
 
     /// Allocate and initialize State
-    let state c id out out1 : PreState<_>=
+    let state c id out out1 : State<_>=
         { c=c; id=id; out=out; out1=out1 }
 
     /// Patch the list of states at out to point to start.
@@ -148,11 +139,4 @@ let post2nfa (postfix:Match<'t> list):State<'t> option when 't : equality=
         let matchstate = {c=Match;out=None;out1=None;id=0}
         patch(e.out, matchstate)
 
-        let rec mapToState (s: PreState<'t>) : State<'t>=
-            let optMapToState = Option.map mapToState 
-            { c= s.c
-              id= s.id
-              out= optMapToState s.out
-              out1= optMapToState s.out1 }
-
-        Some(mapToState e.start)
+        Some(e.start)
