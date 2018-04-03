@@ -12,7 +12,7 @@ In order to have a regex matcher in f#. This algorithm can be reused for other u
 MacOS/Linux | Windows
 --- | ---
 [![Travis Badge](https://travis-ci.org/wallymathieu/Thompson_Regex.svg?branch=master)](https://travis-ci.org/wallymathieu/Thompson_Regex) | [![Build status](https://ci.appveyor.com/api/projects/status/github/wallymathieu/Thompson_Regex?svg=true)](https://ci.appveyor.com/project/wallymathieu/thompson-regex)
-[![Build History](https://buildstats.info/travisci/chart/wallymathieu/thompson-regex)](https://travis-ci.org/wallymathieu/thompson-regex/builds) | [![Build History](https://buildstats.info/appveyor/chart/wallymathieu/thompson-regex)](https://ci.appveyor.com/project/wallymathieu/thompson-regex)  
+[![Build History](https://buildstats.info/travisci/chart/wallymathieu/Thompson_Regex)](https://travis-ci.org/wallymathieu/Thompson_Regex/builds) | [![Build History](https://buildstats.info/appveyor/chart/wallymathieu/thompson-regex)](https://ci.appveyor.com/project/wallymathieu/thompson-regex)  
 
 ### Building
 
