@@ -1,12 +1,12 @@
-﻿module Regex
-  
+﻿module Thompson.Regex
+
 open NFA
 open RegexToPostfix
 
-type MList<'t> when 't : equality=
+type private MList<'t> when 't : equality=
     System.Collections.Generic.List<State<'t>>
 
-module MList=
+module private MList=
     let add v (l:MList<'t>)=
         l.Add(v)
 
@@ -21,7 +21,7 @@ module MList=
 type ListState(listid:int) =
     member val listid=listid with get, set
     member val lastList = new System.Collections.Generic.Dictionary<int,int>()
-    member self.listid_plus_plus()=
+    member self.``listid ++``()=
         self.listid <- self.listid+1
     new ()=
         new ListState(0)
@@ -31,7 +31,7 @@ type ListState(listid:int) =
         ls.lastList.[v]
 
     static member isListid v (ls:ListState) =
-        ls.listid = (ListState.getLastList v ls) 
+        ls.listid = (ListState.getLastList v ls)
 
     static member setListid v (ls:ListState) =
         ls.lastList.[v] <- ls.listid
@@ -40,20 +40,20 @@ type ListState(listid:int) =
 let matches (start:State<'t>) (s:'t seq) (visit:State<'t>->'a) :'a seq option =
     /// Check whether state list contains a match.
     let ismatch (l:MList<'t>)=
-        l 
+        l
             |> MList.tryFind ( fun s-> NFAState<'t>.isMatch s.c )
             |> Option.isSome
 
     /// Add s to l, following unlabeled arrows.
     let rec addstate (ls:ListState) (l:MList<'t>) (s:State<'t>)=
         // (s == NULL || s->lastlist == listid)
-        if not(ListState.isListid s.id ls)  then 
+        if not(ListState.isListid s.id ls)  then
             // s->lastlist = listid;
             ListState.setListid s.id ls
 
             if (NFAState<'t>.isSplit s.c) then
                 // follow unlabeled arrows
-                let addstate = Option.iter(addstate ls l) 
+                let addstate = Option.iter(addstate ls l)
                 addstate s.out
                 addstate s.out1
             else
@@ -64,12 +64,12 @@ let matches (start:State<'t>) (s:'t seq) (visit:State<'t>->'a) :'a seq option =
     /// past the character c,
     /// to create next NFA state set nlist.
     let step (ls:ListState) (clist:MList<'t>, c:'t, nlist:MList<'t>)=
-        ls.listid_plus_plus()
+        ls.``listid ++``()
         nlist.Clear()
         let maybeS = clist |> MList.tryFind (fun s->s.c.matches c)
         maybeS |> Option.map (fun s->
             let h = visit s
-            let optAddstate = Option.iter(addstate ls nlist) 
+            let optAddstate = Option.iter(addstate ls nlist)
             optAddstate s.out
             h
         )
@@ -77,7 +77,7 @@ let matches (start:State<'t>) (s:'t seq) (visit:State<'t>->'a) :'a seq option =
     /// Compute initial state list
     let startlist (ls:ListState) (start:State<'t>,l:MList<'t>)=
         l.Clear()
-        ls.listid_plus_plus()
+        ls.``listid ++``()
         addstate ls l start
         l
 
@@ -93,28 +93,27 @@ let matches (start:State<'t>) (s:'t seq) (visit:State<'t>->'a) :'a seq option =
         let t = clist
         clist <- nlist
         nlist <- t
-    // 
+    //
 
     if ismatch clist then
         Some (res |> Seq.choose id)
     else
         None
 
-let isMatch (regex, value) = 
+let isMatch (regex, value) =
     let post2format (p:string)=
         let to_m c=
             match OperationType.fromChar c with
-            | None -> Value c 
+            | None -> Value c
             | Some opt-> Match.Operation(opt)
 
         p.ToCharArray()
-            |> Array.map to_m 
+            |> Array.map to_m
             |> Array.toList
-    
+
     //
     re2post(regex)
         |> post2format
-        |> NFA.post2nfa
+        |> post2nfa
         |> Option.bind (fun start-> matches start value id)
         |> Option.isSome
-    

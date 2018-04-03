@@ -1,4 +1,4 @@
-﻿module RegexToPostfix 
+﻿module RegexToPostfix
 
 open System
 open System.Text
@@ -16,10 +16,10 @@ let re2post(re:string)=
     /// calling itself with different parameters we can
     /// be very explicit about what the change of state
     let rec re2post'
-        (paren: re2post_s list) 
+        (paren: re2post_s list)
         (s: re2post_s)
         = function
-        | [] -> 
+        | [] ->
             if paren.Length <> 0 then
                 failwith "unmatched!"
             else
@@ -35,7 +35,7 @@ let re2post(re:string)=
                 if(s.natom = 0) then
                     failwith "unmatched!";
                 else
-                    let dots = List.replicate (s.natom-1) '.' 
+                    let dots = List.replicate (s.natom-1) '.'
                     dots @ (re2post' paren {nalt=s.nalt+1; natom=0} tail)
             | ')'->
                 if(s.natom = 0) then
@@ -65,7 +65,7 @@ let re2post(re:string)=
                 op' @ [ c ] @ (re2post' paren {s with natom=natom} tail)
 
 
-    let charList = re.ToCharArray() 
+    let charList = re.ToCharArray()
                    |> Array.toList
     //
     let result = re2post' [] { natom=0; nalt=0 } charList
