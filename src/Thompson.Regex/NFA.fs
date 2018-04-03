@@ -91,11 +91,10 @@ let post2nfa (postfix:Match<'t> list):State<'t> option when 't : equality=
             | State_out1 s'-> s'.out1 <- Some s
         )
 
-    /// Initialize Frag struct. 
+    /// Initialize Frag struct.
     let frag(start, out)=
         new Frag<_>(start=start, out=out)
 
-    let mutable p:string=""
     let idgen = IdGenerator()
     let stack = new System.Collections.Generic.Stack<Frag<'t>>()
     let pop()=
@@ -104,7 +103,7 @@ let post2nfa (postfix:Match<'t> list):State<'t> option when 't : equality=
         stack.Push v
     for p in postfix do
         match p with
-        | Operation Catenate -> //catenate 
+        | Operation Catenate -> //catenate
             let e2 = pop()
             let e1 = pop()
             patch(e1.out, e2.start)
@@ -114,7 +113,7 @@ let post2nfa (postfix:Match<'t> list):State<'t> option when 't : equality=
             let e1 = pop()
             let s = state Split (!idgen()) (Some(e1.start)) (Some(e2.start))
             push(frag(s, e1.out @ e2.out))
-        | Operation ZeroOrOne -> //zero or one 
+        | Operation ZeroOrOne -> //zero or one
             let e =pop()
             let s = state Split (!idgen()) (Some(e.start)) None
             push(frag(s, e.out @ [State_out1(s)]))

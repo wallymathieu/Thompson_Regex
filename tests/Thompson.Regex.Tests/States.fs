@@ -1,9 +1,6 @@
-﻿
-namespace Tests
+﻿module States
 open System
 open System.Text
-
-module States= 
 
     let rec printnfa (start:NFA.State<char>, depth:int)=
         if depth>100 then
@@ -17,7 +14,7 @@ module States=
 
             append(printSpaces(depth));
             append(String.Format("(c={0}, id={1} \n", start.c, start.id));
-            start.out |> Option.iter (fun out-> 
+            start.out |> Option.iter (fun out->
                 append(printSpaces(depth+1))
                 append(",out=\n")
                 append(printnfa(out, depth+2))
