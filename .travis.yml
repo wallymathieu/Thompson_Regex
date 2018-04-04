@@ -5,10 +5,10 @@ dist: trusty
 dotnet: 2.0.3
 mono:
   - 5.4.1
-  - latest # => "stable release"
-  - alpha
-  - beta
-  - weekly # => "latest commits"
+  #- latest # => "stable release"
+  #- alpha
+  #- beta
+  #- weekly # => "latest commits"
 os:
   - linux
 
@@ -22,8 +22,11 @@ script:
 
 matrix:
   fast_finish: true
-  allow_failures:
-    - mono: latest
-    - mono: alpha
-    - mono: beta
-    - mono: weekly
+  #allow_failures:
+  #  - mono: latest
+  #  - mono: alpha
+  #  - mono: beta
+  #  - mono: weekly
+branches:
+  only: 
+    - master
