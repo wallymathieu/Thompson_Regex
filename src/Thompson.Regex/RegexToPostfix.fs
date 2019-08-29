@@ -69,4 +69,4 @@ let re2post(re:string)=
                    |> Array.toList
     //
     let result = re2post' [] { natom=0; nalt=0 } charList
-    new String(result |> List.toArray)
+    String(result |> List.toArray)

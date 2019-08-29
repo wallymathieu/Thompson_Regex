@@ -10,8 +10,8 @@ module private MList=
     let add v (l:MList<'t>)=
         l.Add(v)
 
-    let tryFind predicate (l:MList<'t>)=
-         let v = l.FindIndex ( fun e->predicate e)
+    let tryFind (predicate:State<'t>->bool) (l:MList<'t>)=
+         let v = l.FindIndex (System.Predicate<_>(predicate))
          if v<0 then
             None
          else
@@ -24,7 +24,7 @@ type ListState(listid:int) =
     member self.``listid ++``()=
         self.listid <- self.listid+1
     new ()=
-        new ListState(0)
+        ListState(0)
     static member getLastList v (ls:ListState) =
         if not( ls.lastList.ContainsKey(v) ) then
             ls.lastList.Add(v,0)
@@ -41,7 +41,7 @@ let matches (start:State<'t>) (s:'t seq) (visit:State<'t>->'a) :'a seq option =
     /// Check whether state list contains a match.
     let ismatch (l:MList<'t>)=
         l
-            |> MList.tryFind ( fun s-> NFAState<'t>.isMatch s.c )
+            |> MList.tryFind ( fun s-> NFAState.isMatch s.c )
             |> Option.isSome
 
     /// Add s to l, following unlabeled arrows.
@@ -51,7 +51,7 @@ let matches (start:State<'t>) (s:'t seq) (visit:State<'t>->'a) :'a seq option =
             // s->lastlist = listid;
             ListState.setListid s.id ls
 
-            if (NFAState<'t>.isSplit s.c) then
+            if (NFAState.isSplit s.c) then
                 // follow unlabeled arrows
                 let addstate = Option.iter(addstate ls l)
                 addstate s.out
@@ -66,7 +66,7 @@ let matches (start:State<'t>) (s:'t seq) (visit:State<'t>->'a) :'a seq option =
     let step (ls:ListState) (clist:MList<'t>, c:'t, nlist:MList<'t>)=
         ls.``listid ++``()
         nlist.Clear()
-        let maybeS = clist |> MList.tryFind (fun s->s.c.matches c)
+        let maybeS = clist |> MList.tryFind (fun s->s.c.Matches c)
         maybeS |> Option.map (fun s->
             let h = visit s
             let optAddstate = Option.iter(addstate ls nlist)
