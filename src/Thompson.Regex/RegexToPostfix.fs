@@ -3,70 +3,75 @@
 open System
 open System.Text
 
-type re2post_s={
-    nalt:int
-    natom:int
-}
+type private re2post_s=struct
+    val mutable nalt:int
+    val mutable natom:int
+end
 /// Convert infix regexp re to postfix notation.
 /// Insert . as explicit concatenation operator.
 /// Cheesy parser, returns string.
 let re2post(re:string)=
-    /// inner method with standard head tail processing
-    /// the state is is immutable, but since the method is
-    /// calling itself with different parameters we can
-    /// be very explicit about what the change of state
-    let rec re2post'
-        (paren: re2post_s list)
-        (s: re2post_s)
-        = function
-        | [] ->
-            if paren.Length <> 0 then
+    let mutable nalt =0
+    let mutable natom =0
+    let buf = ResizeArray<char>(re.Length)
+    let paren = ResizeArray<re2post_s>(100)
+
+    let mutable p = 0
+    let mutable nalt = 0
+    let mutable natom = 0
+    for c in re.ToCharArray () do
+        match c with
+        | '('->
+            if(natom > 1) then
+                natom <- natom-1
+                buf.Add '.'
+            else
+                if paren.Count<=p then paren.Add (re2post_s())
+                let mutable p' = paren.[p]
+                p'.nalt <- nalt
+                p'.natom <- natom
+                paren.[p] <- p'
+                p <- p+1
+                nalt <- 0
+                natom <- 0
+        | '|'->
+            if(natom = 0) then
                 failwith "unmatched!"
             else
-                (List.replicate (s.natom-1) '.' ) @ (List.replicate s.nalt '|')
-        | c:: tail ->
-            match c with
-            | '('->
-                if(s.natom > 1) then
-                    '.' :: (re2post' paren {s with natom=s.natom-1} tail)
-                else
-                    (re2post' (s:: paren) {natom=0; nalt=0} tail)
-            | '|'->
-                if(s.natom = 0) then
-                    failwith "unmatched!";
-                else
-                    let dots = List.replicate (s.natom-1) '.'
-                    dots @ (re2post' paren {nalt=s.nalt+1; natom=0} tail)
-            | ')'->
-                if(s.natom = 0) then
-                    failwith "unmatched!";
-                else
-                    let ops = (List.replicate (s.natom-1) '.') @ (List.replicate s.nalt '|' )
-                    match paren with
-                    | p::paren_rest ->
-                        ops @ (re2post' paren_rest {nalt=p.nalt; natom=p.natom+1} tail)
-                    | _ -> failwith "unmatched!"
-            | '*'
-            | '+'
-            | '?'->
-                if(s.natom = 0) then
-                    failwith "unmatched!"
-                else
-                    c::(re2post' paren s tail)
-            | _ ->
-                let mutable natom = s.natom
-                let op' =
-                    if(natom > 1) then
-                        natom<-natom-1
-                        ['.']
-                    else
-                        []
-                natom<-natom+1
-                op' @ [ c ] @ (re2post' paren {s with natom=natom} tail)
+                buf.AddRange (List.replicate (natom-1) '.')
+                natom <- 0
+                nalt <- nalt+1
+        | ')'->
+            if(p = 0 || natom = 0) then
+                failwith "unmatched!"
+            else
+                buf.AddRange (List.replicate (natom-1) '.')
+                natom<-0
+                buf.AddRange (List.replicate nalt '|')
+                p <- p-1
+                nalt <- paren.[p].nalt
+                natom <- paren.[p].natom
+                natom <- natom+1
+        | '*'
+        | '+'
+        | '?'->
+            if(natom = 0) then
+                failwith "unmatched!"
+            else
+                buf.Add c
+        | c' ->
+            if(natom > 1) then
+                natom<-natom-1
+                buf.Add '.'
+            buf.Add c'
+            natom <- natom+1
+        
+    
+    if p <> 0 then
+        failwith "unmatched!"
+    else
+        buf.AddRange (List.replicate (natom-1) '.')
+        buf.AddRange (List.replicate nalt '|')
 
-
-    let charList = re.ToCharArray()
-                   |> Array.toList
-    //
-    let result = re2post' [] { natom=0; nalt=0 } charList
-    String(result |> List.toArray)
+    //*dst = 0;
+        buf.ToArray() |> String

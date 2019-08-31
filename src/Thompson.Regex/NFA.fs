@@ -53,6 +53,7 @@ type OperationType=
     | Catenate
     | Alternate
     | ZeroOrOne
+    /// also known as Kleene or *
     | ZeroOrMore
     | OneOrMore
     with
