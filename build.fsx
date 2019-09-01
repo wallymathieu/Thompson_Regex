@@ -296,7 +296,7 @@ Target "Release" DoNothing
   ==> "SourcelinkTest"
   ==> "Publish"
   ==> "GitRelease"
-  ==> "GitHubRelease"
+//  ==> "GitHubRelease"
   ==> "Release"
 
 "DotnetRestore"
