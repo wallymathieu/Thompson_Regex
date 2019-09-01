@@ -5,28 +5,30 @@
 /// If c == Split, unlabeled arrows to out and out1 (if != NULL).
 /// If c < 256, labeled arrow with character c to out.
 type NFAState<'t> when 't :equality=
-    | Value of 't
-    | Match //=256
-    | Split //=257
-    with
-        member self.matches c=
-            match self with
-            |Value c'-> c'=c
-            |_ -> false
-        override self.ToString()=
-            match self with
-            | Value c-> sprintf "'%O'" c
-            | Match -> "Match"
-            | Split -> "Split"
+  | Value of 't
+  | Match //=256
+  | Split //=257
+  with
+    member self.Matches c=
+      match self with
+      | Value c'-> c'=c
+      | _ -> false
 
-        static member isSplit state=
-            match state with
-            | Split -> true
-            | _ -> false
-        static member isMatch state=
-            match state with
-            | Match -> true
-            | _ -> false
+    override self.ToString()=
+      match self with
+      | Value c-> sprintf "'%O'" c
+      | Match -> "Match"
+      | Split -> "Split"
+module NFAState=
+  let isSplit state=
+    match state with
+    | Split -> true
+    | _ -> false
+
+  let isMatch state=
+    match state with
+    | Match -> true
+    | _ -> false
 
 type State<'t> when 't :equality ={
     c:NFAState<'t>
@@ -51,6 +53,7 @@ type OperationType=
     | Catenate
     | Alternate
     | ZeroOrOne
+    /// also known as Kleene or *
     | ZeroOrMore
     | OneOrMore
     with
@@ -72,7 +75,7 @@ type Match<'t>=
 let post2nfa (postfix:Match<'t> list):State<'t> option when 't : equality=
 
     /// get ids for states
-    let IdGenerator()=
+    let idGenerator()=
         let id= ref 1
         ( fun unit->
             id := !id+1
@@ -95,7 +98,7 @@ let post2nfa (postfix:Match<'t> list):State<'t> option when 't : equality=
     let frag(start, out)=
         new Frag<_>(start=start, out=out)
 
-    let idgen = IdGenerator()
+    let idgen = idGenerator()
     let stack = new System.Collections.Generic.Stack<Frag<'t>>()
     let pop()=
         stack.Pop()

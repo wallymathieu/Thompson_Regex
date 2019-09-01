@@ -3,26 +3,40 @@ module Tests
 
 open Expecto
 open Thompson
-let assertTrue a = Expect.equal a true "expected true"
-let assertFalse a = Expect.equal a false "expected false"
+let assertRegexMatch regex string =
+  Expect.equal (Regex.isMatch (regex, string)) true <| sprintf "expected %s to match %s" regex string
+let assertNotARegexMatch regex string =
+  Expect.equal (Regex.isMatch (regex, string)) false <| sprintf "expected %s to not match %s" regex string
+let testCaseRegexMatch regex string = 
+  testCase (sprintf "regex match %s %s" regex string) <| fun _ -> assertRegexMatch regex string
+let testCaseRegexNotAMatch regex string = testCase (sprintf "regex not a match %s %s" regex string) <| fun _ -> assertNotARegexMatch regex string
 [<Tests>]
 let tests =
   testList "RegexTests" [
 
     testCase "A_or_b" <| fun _ ->
-      assertTrue <| Regex.isMatch ("(a|b)", "a")
+      assertRegexMatch "(a|b)" "a"
 
     testCase "A_followed_by_b" <| fun _ ->
-      assertTrue <| Regex.isMatch ("ab", "ab")
+      assertRegexMatch "ab" "ab"
 
     testCase "Just_A" <| fun _ ->
-      assertTrue <| Regex.isMatch ("a", "a")
+      assertRegexMatch "a" "a"
 
     testCase "A_b_zero_or_more" <| fun _ ->
-      assertTrue <| Regex.isMatch ("ab*", "ab")
-      assertTrue <| Regex.isMatch ("ab*", "abbb")
-      assertFalse <| Regex.isMatch ("ab*", "ac")
-      assertFalse <| Regex.isMatch ("ab*", "aab")
+      assertRegexMatch "ab*" "ab"
+      assertRegexMatch "ab*" "abbb"
+      assertNotARegexMatch "ab*" "ac"
+      assertNotARegexMatch "ab*" "aab"
+
+    //from bytecode tests in the c code
+    testCaseRegexMatch      "abcdefg"  "abcdefg"
+    testCaseRegexNotAMatch  "(a|b)*a"  "ababababab"
+    //testCaseRegexMatch      "(a|b)*a"  "aba"
+    //testCaseRegexMatch      "(a|b)*a"  "aaaaaaaaba"
+    testCaseRegexNotAMatch  "(a|b)*a"  "aaaaaabac"
+    testCaseRegexMatch      "a(b|c)*d" "abccbcccd"
+    testCaseRegexNotAMatch  "a(b|c)*d" "abccbcccde"
   ]
 [<Tests>]
 let tests2 =
@@ -32,4 +46,6 @@ let tests2 =
       Expect.equal (RegexToPostfix.re2post ("ab|c")) "ab.c|" "should be ab.c|"
     testCase "Test_2" <| fun _ ->
       Expect.equal (RegexToPostfix.re2post ("(a|b)")) "ab|" "should be ab|"
+    testCase "Test_3" <| fun _ ->
+      Expect.equal (RegexToPostfix.re2post ("(a|b)*a")) "ab|*a." "should be ab|*a."
   ]

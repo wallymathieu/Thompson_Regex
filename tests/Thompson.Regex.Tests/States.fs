@@ -6,7 +6,7 @@ open System.Text
         if depth>100 then
             failwith "!!"
         else
-            let sb = new StringBuilder()
+            let sb = StringBuilder()
             let printSpaces num=
                 String.init num (fun _ -> " ")
             let append (v:string)=

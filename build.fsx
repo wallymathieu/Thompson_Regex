@@ -74,7 +74,7 @@ type TargetFramework =
 | Full of string
 | Core of string
 
-let (|StartsWith|_|) prefix (s: string) =
+let (|StartsWith|_|) (prefix:string) (s: string) =
     if s.StartsWith prefix then Some () else None
 
 let getTargetFramework tf =
@@ -244,7 +244,7 @@ Target "GitRelease" (fun _ ->
     Branches.tag "" release.NugetVersion
     Branches.pushTag "" "origin" release.NugetVersion
 )
-
+(*
 #load "paket-files/build/fsharp/FAKE/modules/Octokit/Octokit.fsx"
 open Octokit
 
@@ -272,8 +272,8 @@ Target "GitHubRelease" (fun _ ->
         |> Seq.fold (fun draft pkg -> draft |> uploadFile pkg) draft
     |> releaseDraft
     |> Async.RunSynchronously
-
 )
+*)
 
 Target "Release" DoNothing
 
@@ -296,7 +296,7 @@ Target "Release" DoNothing
   ==> "SourcelinkTest"
   ==> "Publish"
   ==> "GitRelease"
-  ==> "GitHubRelease"
+//  ==> "GitHubRelease"
   ==> "Release"
 
 "DotnetRestore"
