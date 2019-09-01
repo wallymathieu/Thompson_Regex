@@ -4,7 +4,7 @@ open NFA
 open RegexToPostfix
 
 type private MList<'t> when 't : equality=
-    System.Collections.Generic.List<State<'t>>
+    ResizeArray<State<'t>>
 
 module private MList=
     let add v (l:MList<'t>)=
@@ -20,7 +20,7 @@ module private MList=
 
 type ListState(listid:int) =
     member val listid=listid with get, set
-    member val lastList = new System.Collections.Generic.Dictionary<int,int>()
+    member val lastList = System.Collections.Generic.Dictionary<int,int>()
     member self.``listid ++``()=
         self.listid <- self.listid+1
     new ()=
@@ -82,11 +82,11 @@ let matches (start:State<'t>) (s:'t seq) (visit:State<'t>->'a) :'a seq option =
         l
 
     let ls = ListState()
-    let l1 = new MList<_>()
-    let l2 = new MList<_>()
+    let l1 = ResizeArray()
+    let l2 = ResizeArray()
     let mutable clist = startlist ls (start, l1)
     let mutable nlist = l2
-    let res = new System.Collections.Generic.List<'a option>()
+    let res = ResizeArray()
     for c in s do
         res.Add( step ls (clist, c, nlist) )
         // swap clist, nlist :

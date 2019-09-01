@@ -7,6 +7,7 @@ type private re2post_s=struct
     val mutable nalt:int
     val mutable natom:int
 end
+
 /// Convert infix regexp re to postfix notation.
 /// Insert . as explicit concatenation operator.
 /// Cheesy parser, returns string.
